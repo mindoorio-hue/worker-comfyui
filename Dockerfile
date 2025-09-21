@@ -139,10 +139,8 @@ FROM base AS final
 # Copy models from stage 2 to the final image
 COPY --from=downloader /comfyui/models /comfyui/models
 
-# Add Wan 2.2 custom nodes
-RUN git clone https://github.com/Comfy-Org/ComfyUI-Wan-Video-Wrapper.git /tmp/extensions/ComfyUI-Wan-Video-Wrapper && \
-    cd /tmp/extensions/ComfyUI-Wan-Video-Wrapper && pip install -r requirements.txt && cd /workspace
-# Optional: Pre-download models
-RUN mkdir -p /comfyui/models/diffusion_models && \
-    wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_high_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_high_noise_14B_bf16.safetensors && \
-    wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_low_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_low_noise_14B_bf16.safetensors
+# Add Wan 2.2 custom nodes via kijai wrapper (correct repo)
+RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git /tmp/extensions/ComfyUI-WanVideoWrapper && \
+    cd /tmp/extensions/ComfyUI-WanVideoWrapper && \
+    pip install -r requirements.txt && \
+    cd /workspace
