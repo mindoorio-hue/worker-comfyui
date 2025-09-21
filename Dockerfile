@@ -94,7 +94,8 @@ CMD ["/start.sh"]
 # Stage 2: Download models
 FROM base AS downloader
 
-ARG HUGGINGFACE_ACCESS_TOKEN
+# ARG HUGGINGFACE_ACCESS_TOKEN
+RUN HF_TOKEN=$HUGGINGFACE_ACCESS_TOKEN huggingface-cli download Wan-AI/Wan2.2-I2V-A14B wan2.2_i2v_high_noise_14B_bf16.safetensors --local-dir /comfyui/models/diffusion_models
 # Set default model type if none is provided
 ARG MODEL_TYPE=flux1-dev-fp8
 
@@ -139,26 +140,28 @@ FROM base AS final
 # Copy models from stage 2 to the final image
 COPY --from=downloader /comfyui/models /comfyui/models
 
-# Install build tools and CUDA-compatible deps for Wan 2.2 wrapper
+# Install build tools, Git, and CUDA-compatible deps
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
     g++ \
     python3-dev \
+    git \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir --upgrade pip
 
-# Upgrade/Install PyTorch 2.4+ with CUDA 12.1 (matches RunPod A100)
+# Install PyTorch 2.4+ with CUDA 12.1 (matches RunPod A100)
 RUN pip install --no-cache-dir \
     torch==2.4.0 \
     torchvision==0.19.0 \
     --index-url https://download.pytorch.org/whl/cu121
 
-# Install other core ML deps to avoid conflicts
+# Install other ML deps to avoid conflicts
 RUN pip install --no-cache-dir \
     diffusers==0.29.0 \
     transformers==4.42.0 \
-    accelerate==0.31.0
+    accelerate==0.31.0 \
+    safetensors==0.4.3
 
 # Clone and install Wan 2.2 wrapper
 RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git /tmp/extensions/ComfyUI-WanVideoWrapper && \
@@ -166,7 +169,7 @@ RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git /tmp/extensio
     pip install --no-cache-dir -r requirements.txt && \
     cd /workspace
 
-# Optional: Pre-download models (~10-20GB, speeds up jobs)
+# Optional: Pre-download models (no token needed, public access)
 RUN mkdir -p /comfyui/models/diffusion_models && \
     wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_high_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_high_noise_14B_bf16.safetensors && \
     wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_low_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_low_noise_14B_bf16.safetensors && \
