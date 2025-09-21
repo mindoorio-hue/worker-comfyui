@@ -139,8 +139,38 @@ FROM base AS final
 # Copy models from stage 2 to the final image
 COPY --from=downloader /comfyui/models /comfyui/models
 
-# Add Wan 2.2 custom nodes via kijai wrapper (correct repo)
+# Install build tools and CUDA-compatible deps for Wan 2.2 wrapper
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir --upgrade pip
+
+# Upgrade/Install PyTorch 2.4+ with CUDA 12.1 (matches RunPod A100)
+RUN pip install --no-cache-dir \
+    torch==2.4.0 \
+    torchvision==0.19.0 \
+    --index-url https://download.pytorch.org/whl/cu121
+
+# Install other core ML deps to avoid conflicts
+RUN pip install --no-cache-dir \
+    diffusers==0.29.0 \
+    transformers==4.42.0 \
+    accelerate==0.31.0
+
+# Clone and install Wan 2.2 wrapper
 RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git /tmp/extensions/ComfyUI-WanVideoWrapper && \
     cd /tmp/extensions/ComfyUI-WanVideoWrapper && \
-    pip install -r requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
     cd /workspace
+
+# Optional: Pre-download models (~10-20GB, speeds up jobs)
+RUN mkdir -p /comfyui/models/diffusion_models && \
+    wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_high_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_high_noise_14B_bf16.safetensors && \
+    wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_low_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_low_noise_14B_bf16.safetensors && \
+    mkdir -p /comfyui/models/text_encoders && \
+    wget --no-check-certificate -O /comfyui/models/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/umt5_xxl_fp8_e4m3fn_scaled.safetensors && \
+    mkdir -p /comfyui/models/vae && \
+    wget --no-check-certificate -O /comfyui/models/vae/wan_2.2_vae.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan_2.2_vae.safetensors
