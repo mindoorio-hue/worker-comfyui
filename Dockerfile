@@ -139,5 +139,6 @@ FROM base AS final
 # Copy models from stage 2 to the final image
 COPY --from=downloader /comfyui/models /comfyui/models
 
-&& git clone https://github.com/Comfy-Org/ComfyUI-Wan-Video-Wrapper.git /tmp/extensions/ComfyUI-Wan-Video-Wrapper \
-&& cd /tmp/extensions/ComfyUI-Wan-Video-Wrapper && pip install -r requirements.txt && cd /workspace
+RUN git clone https://github.com/example/repo.git && \
+    git clone https://github.com/Comfy-Org/ComfyUI-Wan-Video-Wrapper.git /tmp/extensions/ComfyUI-Wan-Video-Wrapper && \
+    cd /tmp/extensions/ComfyUI-Wan-Video-Wrapper && pip install -r requirements.txt && cd /workspace
