@@ -94,8 +94,6 @@ CMD ["/start.sh"]
 # Stage 2: Download models
 FROM base AS downloader
 
-# ARG HUGGINGFACE_ACCESS_TOKEN
-RUN HF_TOKEN=$HUGGINGFACE_ACCESS_TOKEN huggingface-cli download Wan-AI/Wan2.2-I2V-A14B wan2.2_i2v_high_noise_14B_bf16.safetensors --local-dir /comfyui/models/diffusion_models
 # Set default model type if none is provided
 ARG MODEL_TYPE=flux1-dev-fp8
 
@@ -169,7 +167,7 @@ RUN git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git /tmp/extensio
     pip install --no-cache-dir -r requirements.txt && \
     cd /workspace
 
-# Optional: Pre-download models (no token needed, public access)
+# Pre-download models (public, using wget, no token needed)
 RUN mkdir -p /comfyui/models/diffusion_models && \
     wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_high_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_high_noise_14B_bf16.safetensors && \
     wget --no-check-certificate -O /comfyui/models/diffusion_models/wan2.2_i2v_low_noise_14B_bf16.safetensors https://huggingface.co/Wan-AI/Wan2.2-I2V-A14B/resolve/main/wan2.2_i2v_low_noise_14B_bf16.safetensors && \
